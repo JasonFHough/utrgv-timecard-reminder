@@ -78,7 +78,7 @@ def get_monthly_due_dates(table: element.ResultSet):
                 datetime_object = datetime.strptime(td_contents, "%m/%d/%Y")
                 due_dates.append(datetime_object)
             except:
-                # strong tag did not contain a date, so skip
+                # td tag did not contain a date, so skip
                 continue
 
         return due_dates
