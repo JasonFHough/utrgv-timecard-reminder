@@ -1,0 +1,12 @@
+# Ignore build output and compiled files.
+*.pyc
+__pycache__/
+dist/
+build/
+*.egg-info/
+
+# Ignore DS_Store files
+.DS_Store
+
+# Ignore pyenv files
+.python-version
