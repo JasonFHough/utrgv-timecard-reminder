@@ -10,6 +10,7 @@ def get_html(url: str):
 
     url - The URL to fetch HTML from
     """
+
     payload = {}
     headers = {}
     response = requests.request("GET", url, headers = headers, data = payload)
@@ -43,6 +44,7 @@ def get_semi_monthly_due_dates(table: element.ResultSet):
 
     table - the semi_monthly_table BeautifulSoup ResultSet
     """
+
     if len(table) != 1:
         return []
     else:
@@ -66,6 +68,7 @@ def get_monthly_due_dates(table: element.ResultSet):
 
     table - the monthly_table BeautifulSoup ResultSet
     """
+
     if len(table) != 1:
         return []
     else:
@@ -83,6 +86,24 @@ def get_monthly_due_dates(table: element.ResultSet):
 
         return due_dates
 
+def remove_past_due_dates(dates):
+    """
+    Removes all the dates in dates that are in the past
+
+    dates - list of datetime objects
+    """
+
+    todays_date = datetime.today()
+    new_dates = []
+    for date in dates:
+        # skip over all dates that are in the past
+        if date < todays_date:
+            continue
+        else:
+            new_dates.append(date)
+
+    return new_dates
+
 def main():
     url = "https://www.utrgv.edu/financial-services-comptroller/departments/payroll-and-tax-compliance/payroll-schedules-and-deadlines/index.htm"
     html = get_html(url)
@@ -91,8 +112,8 @@ def main():
     semi_monthly_table = get_semi_monthly_table(soup)
     monthly_table = get_monthly_table(soup)
 
-    semi_monthly_due_dates = get_semi_monthly_due_dates(semi_monthly_table)
-    monthly_due_dates = get_monthly_due_dates(monthly_table)
+    semi_monthly_due_dates = remove_past_due_dates(get_semi_monthly_due_dates(semi_monthly_table))
+    monthly_due_dates = remove_past_due_dates(get_monthly_due_dates(monthly_table))
 
 if __name__ == "__main__":
     main()
