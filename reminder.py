@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import requests
-from datetime import datetime
 from bs4 import BeautifulSoup, element
+from datetime import datetime, timedelta
 
 def get_html(url: str):
     """
@@ -90,7 +90,7 @@ def remove_past_due_dates(dates):
     """
     Removes all the dates in dates that are in the past
 
-    dates - list of datetime objects
+    dates - list of datetime objects that represent all the timecard due dates
     """
 
     todays_date = datetime.today()
@@ -104,6 +104,60 @@ def remove_past_due_dates(dates):
 
     return new_dates
 
+def is_same_date(date1: datetime, date2: datetime):
+    """
+    Return True is date1 is equal to date2
+
+    date1 - A datetime object
+    date2 - A datetime object
+    """
+
+    return date1.year == date2.year and date1.month == date2.month and date1.day == date2.day
+
+def should_notify(upcoming_due_date):
+    """
+    Given a list of dates, determine if a notification should be sent
+
+    upcoming_due_date - The date representing the next (upcoming) timecard due date
+
+    Return: (True or False for a notification, days before due)
+            If False, days before due will be -1
+    """
+
+    todays_date = datetime.today()
+    one_day = timedelta(
+        weeks = 0,
+        days = 1,
+        hours = 0,
+        minutes = 0,
+        seconds = 0,
+        milliseconds = 0,
+        microseconds = 0
+    )
+    two_day = timedelta(
+        weeks = 0,
+        days = 2,
+        hours = 0,
+        minutes = 0,
+        seconds = 0,
+        milliseconds = 0,
+        microseconds = 0
+    )
+
+    # Timecard is due same day
+    if is_same_date(upcoming_due_date, todays_date):
+        return True, 0
+
+    # Timecard is due tomorrow
+    if is_same_date(upcoming_due_date, todays_date + one_day):
+        return True, 1
+
+    # Timecard is due two days from now
+    if is_same_date(upcoming_due_date, todays_date + two_day):
+        return True, 2
+
+    return False, -1
+
 def main():
     url = "https://www.utrgv.edu/financial-services-comptroller/departments/payroll-and-tax-compliance/payroll-schedules-and-deadlines/index.htm"
     html = get_html(url)
@@ -114,6 +168,18 @@ def main():
 
     semi_monthly_due_dates = remove_past_due_dates(get_semi_monthly_due_dates(semi_monthly_table))
     monthly_due_dates = remove_past_due_dates(get_monthly_due_dates(monthly_table))
+
+    semi_monthly_upcoming_due_date = semi_monthly_due_dates[0]
+    monthly_upcoming_due_date = monthly_due_dates[0]
+
+    semi_monthly_should_notify, semi_monthly_due_when = should_notify(semi_monthly_upcoming_due_date)
+    monthly_should_notify, monthly_due_when = should_notify(monthly_upcoming_due_date)
+
+    if semi_monthly_should_notify:
+        print("Notify Semi-Monthly!", semi_monthly_due_when)
+
+    if monthly_should_notify:
+        print("Notify Monthly!", monthly_due_when)
 
 if __name__ == "__main__":
     main()
