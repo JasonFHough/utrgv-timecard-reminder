@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup, element
 from datetime import datetime, timedelta
 
+
 def get_html(url: str):
     """
     Return the HTML code for a given URL
@@ -16,6 +17,7 @@ def get_html(url: str):
     response = requests.request("GET", url, headers = headers, data = payload)
     return response.text.encode("utf8")
 
+
 def get_semi_monthly_table(soup: BeautifulSoup):
     """
     Return the table tag pertaining to the Semi-Monthly Payroll Schedule
@@ -27,6 +29,7 @@ def get_semi_monthly_table(soup: BeautifulSoup):
     table = soup.find_all("table", {"summary" : "Semi-monthly Payroll Schedule"}, limit = 1)
     return table
 
+
 def get_monthly_table(soup: BeautifulSoup):
     """
     Return the table tag pertaining to the Monthly Payroll Schedule
@@ -37,6 +40,7 @@ def get_monthly_table(soup: BeautifulSoup):
     # Find tag that resembles <table summary="Monthly Payroll Schedule">
     table = soup.find_all("table", {"summary" : "Monthly Payroll Schedule"}, limit = 1)
     return table
+
 
 def get_semi_monthly_due_dates(table: element.ResultSet):
     """
@@ -62,6 +66,7 @@ def get_semi_monthly_due_dates(table: element.ResultSet):
 
         return due_dates
 
+
 def get_monthly_due_dates(table: element.ResultSet):
     """
     Return a list of all the due dates from the monthly table
@@ -73,7 +78,7 @@ def get_monthly_due_dates(table: element.ResultSet):
         return []
     else:
         # Find tag that resembles <td style="font-weight: bold; color: red;">
-        tds = table[0].find_all("td", {"style" : "font-weight: bold; color: red;"})
+        tds = table[0].find_all("td", {"style" : "font-weight: bold; color: #ad0901;"})
         due_dates = []
         for td in tds:
             td_contents = td.contents[0] # Should expect date to be in format: mm/dd/yyyy
@@ -85,6 +90,7 @@ def get_monthly_due_dates(table: element.ResultSet):
                 continue
 
         return due_dates
+
 
 def remove_past_due_dates(dates):
     """
@@ -104,6 +110,7 @@ def remove_past_due_dates(dates):
 
     return new_dates
 
+
 def is_same_date(date1: datetime, date2: datetime):
     """
     Return True is date1 is equal to date2
@@ -113,6 +120,7 @@ def is_same_date(date1: datetime, date2: datetime):
     """
 
     return date1.year == date2.year and date1.month == date2.month and date1.day == date2.day
+
 
 def should_notify(upcoming_due_date):
     """
@@ -158,28 +166,35 @@ def should_notify(upcoming_due_date):
 
     return False, -1
 
+
 def main():
     url = "https://www.utrgv.edu/financial-services-comptroller/departments/payroll-and-tax-compliance/payroll-schedules-and-deadlines/index.htm"
     html = get_html(url)
     soup = BeautifulSoup(html, "html.parser")
 
+    # Get HTML tables
     semi_monthly_table = get_semi_monthly_table(soup)
     monthly_table = get_monthly_table(soup)
 
+    # Extract due dates from tables
     semi_monthly_due_dates = remove_past_due_dates(get_semi_monthly_due_dates(semi_monthly_table))
     monthly_due_dates = remove_past_due_dates(get_monthly_due_dates(monthly_table))
 
+    # Get the upcoming due date
     semi_monthly_upcoming_due_date = semi_monthly_due_dates[0]
     monthly_upcoming_due_date = monthly_due_dates[0]
 
+    # Determine if to send notification
     semi_monthly_should_notify, semi_monthly_due_when = should_notify(semi_monthly_upcoming_due_date)
     monthly_should_notify, monthly_due_when = should_notify(monthly_upcoming_due_date)
 
+    # Send notifications if it was determined
     if semi_monthly_should_notify:
         print("Notify Semi-Monthly!", semi_monthly_due_when)
 
     if monthly_should_notify:
         print("Notify Monthly!", monthly_due_when)
+
 
 if __name__ == "__main__":
     main()
