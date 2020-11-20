@@ -171,7 +171,7 @@ def should_notify(upcoming_due_date):
 
 
 def send_reminder_notification(due_date: datetime, num_days_until_due: int):
-    client = WebClient(token=SLACK_BOT_TOKEN)
+    client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN", ""))
 
     try:
         # -1 would indicate a notification shouldn't be sent (this case should never occur here)
