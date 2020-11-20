@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
+import os
 import requests
 from bs4 import BeautifulSoup, element
 from datetime import datetime, timedelta
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 
 def get_html(url: str):
@@ -167,6 +170,30 @@ def should_notify(upcoming_due_date):
     return False, -1
 
 
+def send_reminder_notification(due_date: datetime, num_days_until_due: int):
+    client = WebClient(token=SLACK_BOT_TOKEN)
+
+    try:
+        # -1 would indicate a notification shouldn't be sent (this case should never occur here)
+        if num_days_until_due <= -1:
+            return
+
+        message = ""
+        if num_days_until_due > 1:
+            message = f"Timecards are due in {num_days_until_due} days! *{due_date.date().month}/{due_date.date().day}/{due_date.date().year}*"
+        elif num_days_until_due == 1:
+            message = f"Timecards are due tomorrow! *{due_date.date().month}/{due_date.date().day}/{due_date.date().year}*"
+        elif num_days_until_due == 0:
+            message = f"Timecards are due *TODAY! {due_date.date().month}/{due_date.date().day}/{due_date.date().year}*"
+
+        response = client.chat_postMessage(channel="#bot-testing", text=message)
+    except SlackApiError as e:
+        # You will get a SlackApiError if "ok" is False
+        assert e.response["ok"] is False
+        assert e.response["error"]  # str like 'invalid_auth', 'channel_not_found'
+        print(f"Got an error: {e.response['error']}")
+
+
 def main():
     url = "https://www.utrgv.edu/financial-services-comptroller/departments/payroll-and-tax-compliance/payroll-schedules-and-deadlines/index.htm"
     html = get_html(url)
@@ -188,12 +215,12 @@ def main():
     semi_monthly_should_notify, semi_monthly_due_when = should_notify(semi_monthly_upcoming_due_date)
     monthly_should_notify, monthly_due_when = should_notify(monthly_upcoming_due_date)
 
-    # Send notifications if it was determined
+    # Send reminder notifications if it was determined
     if semi_monthly_should_notify:
-        print("Notify Semi-Monthly!", semi_monthly_due_when)
+        send_reminder_notification(semi_monthly_upcoming_due_date, semi_monthly_due_when)
 
     if monthly_should_notify:
-        print("Notify Monthly!", monthly_due_when)
+        send_reminder_notification(monthly_upcoming_due_date, monthly_due_when)
 
 
 if __name__ == "__main__":
