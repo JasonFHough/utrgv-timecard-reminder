@@ -1,0 +1,15 @@
+aiohttp==3.7.1
+async-timeout==3.0.1
+attrs==20.2.0
+beautifulsoup4==4.9.3
+certifi==2020.6.20
+chardet==3.0.4
+idna==2.10
+multidict==5.0.0
+requests==2.24.0
+slack-sdk==3.0.0
+slackclient==2.9.3
+soupsieve==2.0.1
+typing-extensions==3.7.4.3
+urllib3==1.25.11
+yarl==1.6.2
